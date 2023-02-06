@@ -53,6 +53,7 @@ class CreateInvoicePageState extends State<CreateInvoicePage> {
   final _formKey = GlobalKey<FormState>();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _descriptionController = TextEditingController();
+  final _commentController = TextEditingController();
   final _amountController = TextEditingController();
   final _amountFocusNode = FocusNode();
   final _bgService = ServiceInjector().backgroundTaskService;
@@ -209,6 +210,8 @@ class CreateInvoicePageState extends State<CreateInvoicePage> {
                 return acc.validateIncomingPayment(amount);
               }
 
+              final response = widget.lnurlWithdraw;
+
               return Form(
                 key: _formKey,
                 child: Padding(
@@ -240,6 +243,19 @@ class CreateInvoicePageState extends State<CreateInvoicePage> {
                             validatorFn: validatePayment,
                             style: theme.FieldTextStyle.textStyle,
                           ),
+                          !response.isFixedAmount
+                              ? Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Text(
+                                    texts.lnurl_fetch_invoice_limit(
+                                      acc.currency.format(response.minAmount),
+                                      acc.currency.format(response.maxAmount),
+                                    ),
+                                    textAlign: TextAlign.left,
+                                    style: theme.FieldTextStyle.labelStyle,
+                                  ),
+                                )
+                              : Padding(padding: const EdgeInsets.only(top: 8)),
                           _buildReceivableBTC(context, acc, lspStatus),
                           StreamBuilder<AccountModel>(
                             stream: accountBloc.accountStream,
@@ -467,11 +483,9 @@ class CreateInvoicePageState extends State<CreateInvoicePage> {
   ) {
     _withdrawFetchResponse = response;
     _descriptionController.text = response.defaultDescription;
-    _amountController.text = account.currency.format(
-      response.maxAmount,
-      includeDisplayName: false,
-      userInput: true,
-    );
+    if (response.isFixedAmount) {
+      _amountController.text = "${response.minAmount}";
+    }
   }
 
   Future _createInvoice(
